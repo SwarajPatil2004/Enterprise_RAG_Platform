@@ -1,4 +1,3 @@
-```md
 # Enterprise RAG Platform (0 Budget)
 
 A **$0** multi-tenant RAG (Retrieval-Augmented Generation) demo: different “companies” (tenants) upload PDFs/URLs, and users can ask questions and get answers **only from documents they’re allowed to see**, with **citations** for every answer.
