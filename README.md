@@ -1,7 +1,6 @@
-```md
-# Enterprise RAG Platform (0 Budget)
+# Enterprise RAG Platform
 
-A **$0** multi-tenant RAG (Retrieval-Augmented Generation) demo: different “companies” (tenants) upload PDFs/URLs, and users can ask questions and get answers **only from documents they’re allowed to see**, with **citations** for every answer.
+A multi-tenant RAG (Retrieval-Augmented Generation) demo: different “companies” (tenants) upload PDFs/URLs, and users can ask questions and get answers **only from documents they’re allowed to see**, with **citations** for every answer.
 
 **Core idea:** “security trimming” — the backend filters retrieval by `tenant_id` + `roles_allowed` so unauthorized text is never sent to the model. Qdrant supports metadata (payload) filtering for vector search, which makes this possible.
 ---
