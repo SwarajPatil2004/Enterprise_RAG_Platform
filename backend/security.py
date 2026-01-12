@@ -1,10 +1,25 @@
-# Function: build_qdrant_security_filter(user) -> Filter
-# - Create "must" conditions list:
-#   - Condition 1: tenant_id field must exactly match user.tenant_id
-#   - Condition 2: roles_allowed field must match ANY of [user.role] (user's role must be in document's allowed roles)
-# - Create "must_not" conditions list (initially empty):
-# - If user.role is NOT "admin":
-#   - Add condition: sensitive field must NOT be True (non-admins can't see sensitive docs)
-# - Return Filter object with:
-#   - must = must_conditions list
-#   - must_not = must_not_conditions list
+from qdrant_client import models
+from .models import User
+
+def build_qdrant_security_filter(user: User) -> models.Filter:
+    must = [
+        models.FieldCondition(
+            key="tenant_id",
+            match=models.MatchValue(value=user.tenant_id),
+        ),
+        models.FieldCondition(
+            key="roles_allowed",
+            match=models.MatchAny(any=[user.role]),
+        ),
+    ]
+
+    must_not = []
+    if user.role != "admin":
+        must_not.append(
+            models.FieldCondition(
+                key="sensitive",
+                match=models.MatchValue(value=True),
+            )
+        )
+
+    return models.Filter(must=must, must_not=must_not)
