@@ -39,3 +39,50 @@
 # - soup = BeautifulSoup(main_html, "html.parser")
 # - text = soup.get_text(separator="\n")
 # - Return text
+
+# Function: ingest_document_for_user(
+#     user, title, roles_allowed, source_type, source_value,
+#     raw_text, sensitive_flag, max_chunks
+# ) -> (doc_id, num_points)
+# 1) Save document metadata in SQLite
+# - doc_id = create_document(
+#     tenant_id = user.tenant_id,
+#     title = title,
+#     created_by = user.user_id,
+#     roles_allowed_json = JSON.stringify(roles_allowed),
+#     source_type = source_type,
+#     source_value = source_value
+#   )
+
+# 2) Clean and chunk text
+# - text = clean_text(raw_text)
+# - chunks = first max_chunks of chunk_text(text)
+
+# 3) Embed chunks
+# - vectors = embedder.encode(chunks, normalize_embeddings=True) converted to a plain list
+# - vector_size = length(vectors[0])
+
+# 4) Ensure Qdrant collection exists
+# - qc = get_qdrant()
+# - ensure_collection(qc, vector_size)
+
+# 5) Build Qdrant points (vectors + payload metadata)
+# - points = empty list
+# - For each (idx, chunk, vec) in enumerate(zip(chunks, vectors)):
+#   - point_id = integer created by concatenating doc_id and idx formatted with 4 digits
+#   - sensitive_value = sensitive_flag OR heuristic_sensitive(chunk)
+#   - payload = {
+#       "tenant_id": user.tenant_id,
+#       "doc_id": doc_id,
+#       "title": title,
+#       "chunk_id": idx,
+#       "roles_allowed": roles_allowed,
+#       "sensitive": sensitive_value,
+#       "text": chunk,
+#       "created_at": current UTC time in ISO format
+#     }
+#   - points.append(PointStruct(id=point_id, vector=vec, payload=payload))
+
+# 6) Upsert into Qdrant and return
+# - upsert_chunks(qc, points)
+# - Return (doc_id, number of points)
