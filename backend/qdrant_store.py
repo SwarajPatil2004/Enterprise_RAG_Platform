@@ -1,30 +1,33 @@
-# Globals/Configuration
-# - COLLECTION = environment variable "QDRANT_COLLECTION" or default "enterprise_chunks"
+import os
+from datetime import datetime
+from qdrant_client import QdrantClient, models
 
-# Function: get_qdrant() -> QdrantClient
-# - Read QDRANT_URL from environment (must exist)
-# - Read QDRANT_API_KEY from environment (must exist)
-# - Create a QdrantClient using:
-#   - url = QDRANT_URL
-#   - api_key = QDRANT_API_KEY
-# - Return the client [web:6]
+COLLECTION = os.getenv("QDRANT_COLLECTION", "enterprise_chunks")
 
-# Function: ensure_collection(client, vector_size)
-# - existing_collections = list of collection names from client.get_collections()
-# - If COLLECTION is in existing_collections:
-#   - Return (collection already exists) [web:6]
-# - Otherwise:
-#   - Create a new collection named COLLECTION with:
-#     - vectors_config = VectorParams(size=vector_size, distance=COSINE) [web:1]
-#   - Return (done)
+def get_qdrant() -> QdrantClient:
+    return QdrantClient(
+        url=os.environ["QDRANT_URL"],
+        api_key=os.environ["QDRANT_API_KEY"],
+    )
 
-# Function: upsert_chunks(client, points)
-# - Upsert (insert or update) the given points into COLLECTION [web:6]
+def ensure_collection(client: QdrantClient, vector_size: int):
+    existing = [c.name for c in client.get_collections().collections]
+    if COLLECTION in existing:
+        return
 
-# Function: search(client, query_vector, q_filter, top_k) -> results
-# - Run vector similarity search in COLLECTION using:
-#   - query_vector = query_vector
-#   - query_filter = q_filter
-#   - limit = top_k
-#   - with_payload = True (return metadata/payload along with matches) [web:6]
-# - Return the search results
+    client.create_collection(
+        collection_name=COLLECTION,
+        vectors_config=models.VectorParams(size=vector_size, distance=models.Distance.COSINE),
+    )
+
+def upsert_chunks(client: QdrantClient, points: list[models.PointStruct]):
+    client.upsert(collection_name=COLLECTION, points=points)
+
+def search(client: QdrantClient, query_vector: list[float], q_filter: models.Filter, top_k: int):
+    return client.search(
+        collection_name=COLLECTION,
+        query_vector=query_vector,
+        query_filter=q_filter,
+        limit=top_k,
+        with_payload=True,
+    )
