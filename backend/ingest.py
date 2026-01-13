@@ -1,3 +1,17 @@
+import json
+import re
+import requests
+from bs4 import BeautifulSoup
+from readability import Document as Readable
+from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+from qdrant_client import models
+from datetime import datetime
+
+from .db import create_document
+from .qdrant_store import get_qdrant, ensure_collection, upsert_chunks
+from .models import User
+
 # Globals/Initialization
 # - Load an embedding model: SentenceTransformer("all-MiniLM-L6-v2") [web:21
 
