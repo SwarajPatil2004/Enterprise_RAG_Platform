@@ -12,52 +12,48 @@ from .db import create_document
 from .qdrant_store import get_qdrant, ensure_collection, upsert_chunks
 from .models import User
 
-# Globals/Initialization
-# - Load an embedding model: SentenceTransformer("all-MiniLM-L6-v2") [web:21
+_embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Function: clean_text(s) -> cleaned_string
-# - Replace all whitespace runs (spaces/newlines/tabs) with a single space
-# - Trim leading/trailing spaces
-# - Return cleaned string
+def clean_text(s: str) -> str:
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
 
-# Function: chunk_text(text, chunk_size=900, overlap=150) -> list_of_chunks
-# - chunks = empty list
-# - i = 0
-# - While i < length(text):
-#   - chunk = substring(text, from=i, to=i + chunk_size)
-#   - Append chunk to chunks
-#   - i = i + (chunk_size - overlap)   # slide forward with overlap
-# - Return chunks
+def chunk_text(text: str, chunk_size: int = 900, overlap: int = 150) -> list[str]:
+    chunks = []
+    i = 0
+    while i < len(text):
+        chunks.append(text[i:i+chunk_size])
+        i += (chunk_size - overlap)
+    return chunks
 
-# Function: heuristic_sensitive(text) -> boolean
-# - keywords = ["password", "secret", "api key", "confidential", "ssn"]
-# - t = lowercase(text)
-# - If any keyword appears in t:
-#   - Return True
-# - Else:
-#   - Return False
+def heuristic_sensitive(text: str) -> bool:
+    keywords = ["password", "secret", "api key", "confidential", "ssn"]
+    t = text.lower()
+    return any(k in t for k in keywords)
 
-# Function: extract_pdf(file_bytes) -> text
-# - Create PdfReader from an in-memory bytes buffer
-# - pages_text = empty list
-# - For each page in reader.pages:
-#   - page_text = page.extract_text()
-#   - If page_text is null, use empty string
-#   - Append page_text to pages_text
-# - Return pages_text joined with newline characters
+def extract_pdf(file_bytes: bytes) -> str:
+    reader = PdfReader(io.BytesIO(file_bytes))
+    pages = []
+    for p in reader.pages:
+        pages.append(p.extract_text() or "")
+    return "\n".join(pages)
 
-# Function: extract_url(url) -> text
-# - html = HTTP GET url (timeout=20 seconds).text
-# - readable_doc = ReadabilityDocument(html)
-# - main_html = readable_doc.summary(html_partial=True)
-# - soup = BeautifulSoup(main_html, "html.parser")
-# - text = soup.get_text(separator="\n")
-# - Return text
+def extract_url(url: str) -> str:
+    html = requests.get(url, timeout=20).text
+    doc = Readable(html)
+    soup = BeautifulSoup(doc.summary(html_partial=True), "html.parser")
+    return soup.get_text("\n")
 
-# Function: ingest_document_for_user(
-#     user, title, roles_allowed, source_type, source_value,
-#     raw_text, sensitive_flag, max_chunks
-# ) -> (doc_id, num_points)
+def ingest_document_for_user(
+    user: User,
+    title: str,
+    roles_allowed: list[str],
+    source_type: str,
+    source_value: str,
+    raw_text: str,
+    sensitive_flag: bool,
+    max_chunks: int,
+):
 # 1) Save document metadata in SQLite
 # - doc_id = create_document(
 #     tenant_id = user.tenant_id,
