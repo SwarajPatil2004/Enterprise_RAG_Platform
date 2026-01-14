@@ -36,20 +36,25 @@ async def upload_pdf(
     roles_allowed: str = Form("member"),
     sensitive: bool = Form(False),
     file: UploadFile = File(...),
-    user: User = require_user,
+    user: User = Depends(require_user),  # Fixed: use Depends
 ):
+    """Upload PDF → extract text → chunk → embed → store with security metadata"""
+    
     max_mb = int(os.getenv("MAX_UPLOAD_MB", "15"))
+    if not file.content_type or "pdf" not in file.content_type.lower():
+        raise HTTPException(400, "Please upload a PDF file")
+    
     data = await file.read()
     if len(data) > max_mb * 1024 * 1024:
-        raise HTTPException(413, "File too large")
-
-    # For simplicity in this answer: treat PDF as text elsewhere or add pypdf extraction here.
-    raw_text = data.decode("utf-8", errors="ignore")
-
+        raise HTTPException(413, "File too large (max 15MB)")
+    
+    # Extract text using PyPDF2 (real PDF parsing)
+    raw_text = extract_pdf(data)
+    
     roles = [r.strip() for r in roles_allowed.split(",") if r.strip()]
     max_chunks = int(os.getenv("MAX_CHUNKS_PER_DOC", "400"))
 
-    doc_id, n = ingest_document_for_user(
+    doc_id, n_chunks = ingest_document_for_user(
         user=user,
         title=title,
         roles_allowed=roles,
@@ -59,7 +64,13 @@ async def upload_pdf(
         sensitive_flag=sensitive,
         max_chunks=max_chunks,
     )
-    return {"doc_id": doc_id, "chunks_indexed": n}
+    
+    return {
+        "success": True,
+        "doc_id": doc_id,
+        "chunks_indexed": n_chunks,
+        "message": f"Successfully indexed {n_chunks} chunks from {title}"
+    }
 
 @app.post("/documents/upload_url")
 def upload_url(
