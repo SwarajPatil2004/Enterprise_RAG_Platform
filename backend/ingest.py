@@ -54,45 +54,46 @@ def ingest_document_for_user(
     sensitive_flag: bool,
     max_chunks: int,
 ):
-# 1) Save document metadata in SQLite
-# - doc_id = create_document(
-#     tenant_id = user.tenant_id,
-#     title = title,
-#     created_by = user.user_id,
-#     roles_allowed_json = JSON.stringify(roles_allowed),
-#     source_type = source_type,
-#     source_value = source_value
-#   )
+    # 1) Save the document row in SQLite
+    doc_id = create_document(
+        tenant_id=user.tenant_id,
+        title=title,
+        created_by=user.user_id,
+        roles_allowed_json=json.dumps(roles_allowed),
+        source_type=source_type,
+        source_value=source_value,
+    )
 
-# 2) Clean and chunk text
-# - text = clean_text(raw_text)
-# - chunks = first max_chunks of chunk_text(text)
+    # 2) Clean + chunk
+    text = clean_text(raw_text)
+    chunks = chunk_text(text)[:max_chunks]
 
-# 3) Embed chunks
-# - vectors = embedder.encode(chunks, normalize_embeddings=True) converted to a plain list
-# - vector_size = length(vectors[0])
+    # 3) Embed
+    vectors = _embedder.encode(chunks, normalize_embeddings=True).tolist()
+    vector_size = len(vectors[0])
 
-# 4) Ensure Qdrant collection exists
-# - qc = get_qdrant()
-# - ensure_collection(qc, vector_size)
+    # 4) Store in Qdrant with payload
+    qc = get_qdrant()
+    ensure_collection(qc, vector_size)
 
-# 5) Build Qdrant points (vectors + payload metadata)
-# - points = empty list
-# - For each (idx, chunk, vec) in enumerate(zip(chunks, vectors)):
-#   - point_id = integer created by concatenating doc_id and idx formatted with 4 digits
-#   - sensitive_value = sensitive_flag OR heuristic_sensitive(chunk)
-#   - payload = {
-#       "tenant_id": user.tenant_id,
-#       "doc_id": doc_id,
-#       "title": title,
-#       "chunk_id": idx,
-#       "roles_allowed": roles_allowed,
-#       "sensitive": sensitive_value,
-#       "text": chunk,
-#       "created_at": current UTC time in ISO format
-#     }
-#   - points.append(PointStruct(id=point_id, vector=vec, payload=payload))
+    points = []
+    for idx, (chunk, vec) in enumerate(zip(chunks, vectors)):
+        points.append(
+            models.PointStruct(
+                id=int(f"{doc_id}{idx:04d}"),
+                vector=vec,
+                payload={
+                    "tenant_id": user.tenant_id,
+                    "doc_id": doc_id,
+                    "title": title,
+                    "chunk_id": idx,
+                    "roles_allowed": roles_allowed,
+                    "sensitive": bool(sensitive_flag or heuristic_sensitive(chunk)),
+                    "text": chunk,
+                    "created_at": datetime.utcnow().isoformat(),
+                },
+            )
+        )
 
-# 6) Upsert into Qdrant and return
-# - upsert_chunks(qc, points)
-# - Return (doc_id, number of points)
+    upsert_chunks(qc, points)
+    return doc_id, len(points)
