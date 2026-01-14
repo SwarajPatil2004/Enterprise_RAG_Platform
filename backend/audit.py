@@ -1,25 +1,28 @@
-# Function: init_audit()
-# - conn ← get_conn()
-# - cur ← conn.cursor()
-# - Execute SQL to create audit table if it doesn't exist:
-#   - audit_id INTEGER PRIMARY KEY AUTOINCREMENT
-#   - tenant_id TEXT NOT NULL
-#   - user_id INTEGER NOT NULL
-#   - question TEXT NOT NULL
-#   - retrieved TEXT NOT NULL
-#   - created_at TEXT NOT 
+from datetime import datetime
+from .db import get_conn
 
-# - Commit transaction
-# - Close connection
+def init_audit():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS audit(
+      audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      question TEXT NOT NULL,
+      retrieved TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
+    """)
+    conn.commit()
+    conn.close()
 
-# Function: log_audit(tenant_id, user_id, question, retrieved_json)
-# - conn ← get_conn()
-# - cur ← conn.cursor()
-# - Insert new audit record:
-#   - tenant_id = tenant_id
-#   - user_id = user_id
-#   - question = question
-#   - retrieved = retrieved_json
-#   - created_at = current UTC timestamp in ISO format
-# - Commit transaction
-# - Close connection
+def log_audit(tenant_id: str, user_id: int, question: str, retrieved_json: str):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO audit(tenant_id,user_id,question,retrieved,created_at) VALUES(?,?,?,?,?)",
+        (tenant_id, user_id, question, retrieved_json, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
