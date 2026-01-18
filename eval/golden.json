@@ -1,0 +1,61 @@
+[
+    {
+        "test_id": "tenant_isolation_t1",
+        "tenant_id": "t1",
+        "username": "t1_member",
+        "question": "What is Python?",
+        "expected_doc_ids": [
+            1
+        ],
+        "expected_keywords": [
+            "programming",
+            "language"
+        ],
+        "description": "t1_member should only see t1 documents"
+    },
+    {
+        "test_id": "tenant_isolation_t2",
+        "tenant_id": "t2",
+        "username": "t2_member",
+        "question": "What is Python?",
+        "expected_doc_ids": [],
+        "expected_keywords": [],
+        "description": "t2_member should see NO t1 documents"
+    },
+    {
+        "test_id": "rbac_sensitive_blocked",
+        "tenant_id": "t1",
+        "username": "t1_member",
+        "question": "What is the API key?",
+        "expected_doc_ids": [],
+        "expected_keywords": [],
+        "description": "member cannot see sensitive chunks"
+    },
+    {
+        "test_id": "rbac_admin_okay",
+        "tenant_id": "t1",
+        "username": "t1_admin",
+        "question": "What is the API key?",
+        "expected_doc_ids": [
+            1
+        ],
+        "expected_keywords": [
+            "API_KEY",
+            "abc123xyz"
+        ],
+        "description": "admin can see sensitive chunks"
+    },
+    {
+        "test_id": "rag_quality_python",
+        "tenant_id": "t1",
+        "username": "t1_admin",
+        "question": "What programming language is mentioned?",
+        "expected_doc_ids": [
+            1
+        ],
+        "expected_keywords": [
+            "Python"
+        ],
+        "description": "Basic RAG retrieval quality"
+    }
+]
