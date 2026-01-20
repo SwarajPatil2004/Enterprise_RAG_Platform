@@ -1,7 +1,7 @@
 import os
 import json
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from dotenv import load_dotenv, find_dotenv
 from sentence_transformers import SentenceTransformer
 
 from .db import init_db, seed_demo_users
@@ -13,7 +13,7 @@ from .qdrant_store import get_qdrant, search
 from .rag_llm import answer_from_context
 from .ingest import ingest_document_for_user, extract_url
 
-load_dotenv()
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 app = FastAPI(title="Enterprise RAG Platform")
 
