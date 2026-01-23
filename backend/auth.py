@@ -26,8 +26,10 @@ def login(username: str, password: str) -> str:
         "user_id": row["user_id"],
         "tenant_id": row["tenant_id"],
         "role": row["role"],
+        "groups": json.loads(row["groups"] or "[]"),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=EXPIRE_MIN),
     }
+
     return jwt.encode(payload, SECRET, algorithm=ALGO)
 
 def require_user(creds: HTTPAuthorizationCredentials = Depends(bearer)) -> User:
@@ -39,6 +41,8 @@ def require_user(creds: HTTPAuthorizationCredentials = Depends(bearer)) -> User:
             username="(from_token)",
             tenant_id=str(data["tenant_id"]),
             role=str(data["role"]),
+            groups=list(data.get("groups", [])),
         )
+
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
