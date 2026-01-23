@@ -13,6 +13,14 @@ from .qdrant_store import get_qdrant, search
 from .rag_llm import answer_from_context
 from .ingest import ingest_document_for_user, extract_url
 
+from .rbac import require_admin
+from .audit import list_audit_for_tenant
+
+@app.get("/admin/audit")
+def admin_audit(user: User = Depends(require_user), limit: int = 100):
+    require_admin(user)
+    return {"items": list_audit_for_tenant(user.tenant_id, limit=limit)}
+
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
 app = FastAPI(title="Enterprise RAG Platform")
