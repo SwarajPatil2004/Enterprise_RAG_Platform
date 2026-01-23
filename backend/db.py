@@ -17,27 +17,27 @@ def init_db():
     
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users(
-    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    tenant_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    groups TEXT NOT NULL DEFAULT '[]'
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        tenant_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        groups TEXT NOT NULL DEFAULT '[]'
     )
     """)
     
     cur.execute("""
     CREATE TABLE IF NOT EXISTS documents(
-    doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tenant_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    created_by INTEGER NOT NULL,
-    roles_allowed TEXT NOT NULL,
-    allowed_users TEXT NOT NULL DEFAULT '[]',
-    allowed_groups TEXT NOT NULL DEFAULT '[]',
-    source_type TEXT NOT NULL,
-    source_value TEXT NOT NULL,
-    created_at TEXT NOT NULL
+        doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        created_by INTEGER NOT NULL,
+        roles_allowed TEXT NOT NULL,
+        allowed_users TEXT NOT NULL DEFAULT '[]',
+        allowed_groups TEXT NOT NULL DEFAULT '[]',
+        source_type TEXT NOT NULL,
+        source_value TEXT NOT NULL,
+        created_at TEXT NOT NULL
     )
     """)
     
@@ -58,7 +58,7 @@ def seed_demo_users():
     for u in demo:
         try:
             cur.execute(
-                "INSERT INTO users(username, password, tenant_id, role) VALUES(?,?,?,?)",
+                "INSERT INTO users(username, password, tenant_id, role, groups) VALUES(?,?,?,?,?)",
                 u
             )
         except sqlite3.IntegrityError:
