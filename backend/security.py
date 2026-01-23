@@ -22,4 +22,25 @@ def build_qdrant_security_filter(user: User) -> models.Filter:
             )
         )
 
-    return models.Filter(must=must, must_not=must_not)
+    acl_should = []
+
+    acl_should.append(models.FieldCondition(
+        key="allowed_users",
+        match=models.MatchAny(any=[user.user_id]),
+    ))
+
+    if user.groups:
+        acl_should.append(models.FieldCondition(
+            key="allowed_groups",
+            match=models.MatchAny(any=user.groups),
+        ))
+
+    acl_should.append(models.IsEmptyCondition(is_empty=models.PayloadField(key="allowed_users")))
+    acl_should.append(models.IsEmptyCondition(is_empty=models.PayloadField(key="allowed_groups")))
+
+    return models.Filter(
+        must=must,
+        must_not=must_not,
+        should=acl_should,
+        min_should=1,
+    )
