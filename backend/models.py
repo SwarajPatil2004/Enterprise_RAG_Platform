@@ -14,8 +14,9 @@ class LoginResponse(BaseModel):
 class User(BaseModel):
     user_id: int
     username: str
-    tenant_id: int
+    tenant_id: str
     role: Role
+    groups: list[str] = []
 
 class UploadDocRequest(BaseModel):
     title: str
