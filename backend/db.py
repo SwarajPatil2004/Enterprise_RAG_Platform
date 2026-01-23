@@ -16,25 +16,28 @@ def init_db():
     cur = conn.cursor()
     
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        tenant_id TEXT NOT NULL,
-        role TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS users(
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    tenant_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    groups TEXT NOT NULL DEFAULT '[]'
     )
     """)
     
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS documents (
-        doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        tenant_id TEXT NOT NULL,
-        title TEXT NOT NULL,
-        created_by TEXT NOT NULL,
-        roles_allowed TEXT NOT NULL,
-        source_type TEXT NOT NULL,
-        source_value TEXT NOT NULL,
-        created_at TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS documents(
+    doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    created_by INTEGER NOT NULL,
+    roles_allowed TEXT NOT NULL,
+    allowed_users TEXT NOT NULL DEFAULT '[]',
+    allowed_groups TEXT NOT NULL DEFAULT '[]',
+    source_type TEXT NOT NULL,
+    source_value TEXT NOT NULL,
+    created_at TEXT NOT NULL
     )
     """)
     
@@ -47,10 +50,10 @@ def seed_demo_users():
 
     # demo only: plaintext passwords (not safe for real apps)
     demo = [
-        ("t1_admin", "pass", "t1", "admin"),
-        ("t1_member", "pass", "t1", "member"),
-        ("t2_admin", "pass", "t2", "admin"),
-        ("t2_member", "pass", "t2", "member"),
+        ("t1_admin", "pass", "t1", "admin", '["finance","hr"]'),
+        ("t1_member", "pass", "t1", "member", '["hr"]'),
+        ("t2_admin", "pass", "t2", "admin", '["finance"]'),
+        ("t2_member", "pass", "t2", "member", '[]')
     ]
     for u in demo:
         try:
