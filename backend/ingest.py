@@ -15,6 +15,15 @@ from .models import User
 
 _embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
+def compute_acl_mode(allowed_users: list[int], allowed_groups: list[str]) -> str:
+    """
+    If no users and no groups are listed, doc is public inside the tenant.
+    Otherwise it's restricted.
+    """
+    if not allowed_users and not allowed_groups:
+        return "public"
+    return "restricted"
+
 def clean_text(s: str) -> str:
     """Remove extra spaces and newlines, like cleaning up messy handwriting."""
     s = re.sub(r"\s+", " ", s)  # Replace all whitespace with single spaces
@@ -79,7 +88,10 @@ def ingest_document_for_user(
     raw_text: str,
     sensitive_flag: bool,
     max_chunks: int,
+    allowed_users: list[int] | None = None,     # NEW
+    allowed_groups: list[str] | None = None,    # NEW
 ):
+
     """Main factory: document → chunks → vectors → Qdrant + SQLite"""
     
     # STEP 1: Save document info in SQLite (like writing in a notebook)
@@ -91,6 +103,11 @@ def ingest_document_for_user(
         source_type=source_type,
         source_value=source_value,
     )
+
+    allowed_users = allowed_users or []
+    allowed_groups = allowed_groups or []
+    acl_mode = compute_acl_mode(allowed_users, allowed_groups)
+
 
     # STEP 2: Clean up messy text
     text = clean_text(raw_text)
@@ -112,21 +129,33 @@ def ingest_document_for_user(
     # STEP 6: Create Qdrant points (vector + security metadata)
     points = []
     for idx, (chunk, vec) in enumerate(zip(chunks, vectors)):
-        # Each chunk gets a unique ID like "doc123_chunk0001"
         point_id = int(f"{doc_id * 10000 + idx}")
-        
-        # Security metadata (this enables tenant isolation + RBAC)
+
         payload = {
+            # ---- tenant + doc identity ----
             "tenant_id": user.tenant_id,
             "doc_id": doc_id,
             "title": title,
             "chunk_id": idx,
+
+            # ---- RBAC ----
             "roles_allowed": roles_allowed,
+
+            # ---- Document-level ACL ----
+            "acl_mode": acl_mode,                 
+            "allowed_users": allowed_users,       
+            "allowed_groups": allowed_groups,     
+
+            # ---- sensitivity ----
             "sensitive": bool(sensitive_flag or heuristic_sensitive(chunk)),
+
+            # ---- actual text used by RAG ----
             "text": chunk,
+
+            # ---- metadata ----
             "created_at": datetime.utcnow().isoformat(),
         }
-        
+
         points.append(models.PointStruct(
             id=point_id,
             vector=vec,
