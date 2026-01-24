@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from .db import get_conn
 
 def init_audit():
@@ -26,3 +27,26 @@ def log_audit(tenant_id: str, user_id: int, question: str, retrieved_json: str):
     )
     conn.commit()
     conn.close()
+
+def list_audit_for_tenant(tenant_id: str, limit: int = 100):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT audit_id, tenant_id, user_id, question, retrieved, created_at "
+        "FROM audit WHERE tenant_id=? ORDER BY audit_id DESC LIMIT ?",
+        (tenant_id, limit),
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    out = []
+    for r in rows:
+        out.append({
+            "audit_id": r["audit_id"],
+            "tenant_id": r["tenant_id"],
+            "user_id": r["user_id"],
+            "question": r["question"],
+            "retrieved": json.loads(r["retrieved"] or "[]"),
+            "created_at": r["created_at"],
+        })
+    return out
