@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 from datetime import datetime
+from passlib.context import CryptContext
 
 DB_PATH = Path(__file__).resolve().parent / "app.db"
 
@@ -49,6 +50,10 @@ def seed_demo_users():
     cur = conn.cursor()
 
     # demo only: plaintext passwords (not safe for real apps)
+    # Use a local context here or import from auth if possible, but importing might cause circular dep.
+    # To be safe and clean, we'll instantiate it locally for seeding.
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
     demo = [
         ("t1_admin", "pass", "t1", "admin", '["finance","hr"]'),
         ("t1_member", "pass", "t1", "member", '["hr"]'),
@@ -56,10 +61,12 @@ def seed_demo_users():
         ("t2_member", "pass", "t2", "member", '[]')
     ]
     for u in demo:
+        # u is a tuple: (username, raw_password, tenant_id, role, groups)
+        hashed = pwd_context.hash(u[1])
         try:
             cur.execute(
                 "INSERT INTO users(username, password, tenant_id, role, groups) VALUES(?,?,?,?,?)",
-                u
+                (u[0], hashed, u[2], u[3], u[4])
             )
         except sqlite3.IntegrityError:
             pass
