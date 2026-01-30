@@ -11,7 +11,7 @@ from .models import LoginRequest, LoginResponse, ChatRequest, ChatResponse, Cita
 from .security import build_qdrant_security_filter
 from .qdrant_store import get_qdrant, search
 from .rag_llm import answer_from_context
-from .ingest import ingest_document_for_user, extract_url
+from .ingest import ingest_document_for_user, extract_url, extract_pdf
 
 from .rbac import require_admin
 from .audit import list_audit_for_tenant
