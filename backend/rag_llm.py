@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv, find_dotenv
 from llama_cpp import Llama
 
-# Load .env in this module too (fixes uvicorn reload)
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
 MODEL_PATH = os.getenv("GGUF_MODEL_PATH")
@@ -11,12 +10,11 @@ if not MODEL_PATH or not os.path.exists(MODEL_PATH):
 
 MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "384"))
 
-# Load model only once
 _llm = Llama(
     model_path=MODEL_PATH, 
     n_ctx=4096,
-    verbose=False,  # Less spam
-    n_threads=4     # Use 4 CPU threads
+    verbose=False,
+    n_threads=4 
 )
 
 SYSTEM_PROMPT = (
