@@ -12,6 +12,10 @@ SECRET = os.getenv("APP_SECRET", "dev_secret")
 EXPIRE_MIN = int(os.getenv("TOKEN_EXPIRE_MINUTES", "240"))
 ALGO = "HS256"
 
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 def login(username: str, password: str) -> str:
     conn = get_conn()
     cur = conn.cursor()
@@ -19,7 +23,7 @@ def login(username: str, password: str) -> str:
     row = cur.fetchone()
     conn.close()
 
-    if not row or row["password"] != password:
+    if not row or not pwd_context.verify(password, row["password"]):
         raise HTTPException(status_code=401, detail="Bad username or password")
 
     payload = {
