@@ -4,10 +4,24 @@ from qdrant_client import QdrantClient, models
 
 COLLECTION = os.getenv("QDRANT_COLLECTION", "enterprise_chunks")
 
+# Global singleton for memory client
+_memory_client = None
+
 def get_qdrant() -> QdrantClient:
+    global _memory_client
+    
+    url = os.environ.get("QDRANT_URL")
+    api_key = os.environ.get("QDRANT_API_KEY")
+
+    if url == ":memory:" or url == "memory":
+        if _memory_client is None:
+            print("initializing global Qdrant :memory: client")
+            _memory_client = QdrantClient(location=":memory:")
+        return _memory_client
+    
     return QdrantClient(
-        url=os.environ["QDRANT_URL"],
-        api_key=os.environ["QDRANT_API_KEY"],
+        url=url,
+        api_key=api_key,
     )
 
 def ensure_collection(client: QdrantClient, vector_size: int):
