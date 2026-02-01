@@ -1,4 +1,5 @@
 import os
+import json
 import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Depends
@@ -23,7 +24,7 @@ def login(username: str, password: str) -> str:
     row = cur.fetchone()
     conn.close()
 
-    if not row or not pwd_context.verify(password, row["password"]):
+    if not row or row["password"] != password:
         raise HTTPException(status_code=401, detail="Bad username or password")
 
     payload = {
