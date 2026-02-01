@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # Up to project root
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")  # Up to project root
 
 API = "http://localhost:8000"
 GOLDEN_PATH = Path(__file__).parent / "golden.json"
