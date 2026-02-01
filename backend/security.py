@@ -41,6 +41,8 @@ def build_qdrant_security_filter(user: User) -> models.Filter:
     return models.Filter(
         must=must,
         must_not=must_not,
-        should=acl_should,
-        min_should=1,
+        min_should=models.MinShould(
+            conditions=acl_should,
+            min_count=1
+        ),
     )
