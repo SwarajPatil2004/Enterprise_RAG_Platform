@@ -12,9 +12,9 @@ MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "384"))
 
 _llm = Llama(
     model_path=MODEL_PATH, 
-    n_ctx=4096,
-    verbose=False,
-    n_threads=4 
+    n_ctx=2048, # Reduced from 4096 to save memory
+    verbose=True, # Enable verbose to see C++ logs in terminal
+    n_threads=2 # Reduced from 4 to prevent CPU starvation
 )
 
 SYSTEM_PROMPT = (
