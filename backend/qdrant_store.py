@@ -18,7 +18,12 @@ def get_qdrant() -> QdrantClient:
             print("initializing global Qdrant :memory: client")
             _memory_client = QdrantClient(location=":memory:")
         return _memory_client
+        
+    # Check if it looks like a file path (local persistence)
+    if url and (url.startswith(".") or url.startswith("/") or ":" in url and "\\" in url):
+        return QdrantClient(path=url)
     
+    # Otherwise treat as HTTP URL
     return QdrantClient(
         url=url,
         api_key=api_key,
