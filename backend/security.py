@@ -38,6 +38,11 @@ def build_qdrant_security_filter(user: User) -> models.Filter:
     acl_should.append(models.IsEmptyCondition(is_empty=models.PayloadField(key="allowed_users")))
     acl_should.append(models.IsEmptyCondition(is_empty=models.PayloadField(key="allowed_groups")))
 
+    acl_should.append(models.FieldCondition(
+        key="acl_mode",
+        match=models.MatchValue(value="public"),
+    ))
+
     return models.Filter(
         must=must,
         must_not=must_not,
