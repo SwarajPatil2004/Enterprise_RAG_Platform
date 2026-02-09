@@ -1,8 +1,11 @@
 import streamlit as st
 import requests
 import json
+import os
+import jwt
+import pandas as pd
 
-API = "http://localhost:8000"
+API = os.getenv("API_URL", "http://localhost:8000")
 
 def set_token(token: str):
     st.session_state["token"] = token
@@ -19,9 +22,9 @@ def get_user_info():
     if "token" not in st.session_state:
         return None
     try:
-        # Decode JWT payload (not secure, just for UI)
+        # Decode JWT payload (no signature check for UI validity, avoiding separate secret management in frontend)
         token = st.session_state["token"]
-        payload = json.loads(token.split(".")[1] + "===")  # Add padding
+        payload = jwt.decode(token, options={"verify_signature": False})
         return {
             "user_id": payload.get("user_id"),
             "tenant_id": payload.get("tenant_id"),
@@ -123,7 +126,8 @@ elif "token" in st.session_state:
             
             if uploaded_file and title and st.button("🚀 Upload PDF", type="primary"):
                 with st.spinner("Processing PDF..."):
-                    files = {"file": uploaded_file.getvalue()}
+                    # Fix: Explicitly send filename and MIME type so backend validation passes
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
                     data = {
                         "title": title,
                         "roles_allowed": roles,
@@ -140,7 +144,11 @@ elif "token" in st.session_state:
                 if r.status_code == 200:
                     st.success(r.json())
                 else:
-                    st.error(r.json().get("detail", r.text))
+                    try:
+                        err_msg = r.json().get("detail", r.text)
+                    except ValueError:
+                        err_msg = r.text or f"Error {r.status_code}"
+                    st.error(err_msg)
 
     elif page == "💬 Chat":
         st.header("💬 Ask Questions")
